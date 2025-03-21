@@ -24,6 +24,50 @@ Per the take-home assessment documentation, the following functionality will be 
 
 ### Provisioning of Cloud Resources
 
+This demo project creates the following resources in Azure: 
+
+#### Resource Group
+The resource group is the logical container for holding the other Azure resources.
+
+#### Virtual Network
+A virtual network is created for later use by the virtual machine. Most values are hardcoded, including an address space
+of "10.0.0.0/16", and a single subnet called "Default" with an address space of "10.0.0.0/24".
+
+#### Virtual Machine
+Most values for the virtual machine are hardcoded. The VM uses the latest Ubuntu 24.04 LTS release, with the smallest
+VM size available to minimize costs for the demo. In addition, a network interface is created and associated with the
+first subnet found attached to the virtual network, which is just the "Default" subnet created in the virtual network
+step.
+
+### Teardown of Cloud Resources
+In addition to the ability to create and query cloud resources, I've also included a DELETE option which is exercised
+by the single integration test I wrote to ensure cloud resources are not left around after a test has completed. 
+
+## Bonus Requirements
+In addition to the basic requirements of managing cloud resources, I've also included the following:
+
+### Unit and Integration Tests
+I've included two unit tests to verify failure case functionality of the resource group endpoint. I'm a strong advocate
+for TDD and good coverage of all functionality, but in the interest of time and getting the demo submitted sooner rather
+than later, I only included two unit tests. The two tests check for NotFound and Unauthorized responses from the `ArmClient`,
+which demonstrates the ability to mock out interactions with external services and still verify the behavior of internal
+code. 
+
+In addition to the two unit tests, I've also included an integration test that runs through the full process of creating
+a virtual machine and supporting infrastructure. The integration test creates a resource group, a virtual network with 
+subnet, and a virtual machine attached to that subnet, and then deletes the entire group at the end of the test.
+
+I also test the telemetry data that is being produced as part of this process, using a tool I developed and maintain
+called OddDotNet (see more below). I create a trace ID, execute the workflow, and then obtain all spans associated with
+that trace ID, subsequently verifying that the correct spans are present. 
+
+### Logging and Error Handling
+For this project, I am using a relatively new tool called .NET Aspire. This tool provides a number of features out of the 
+box, including a dashboard with log, trace, and metric telemetry. For more information, see the project descriptions
+of `IM.AppHost` and `IM.Integration.AppHost`. 
+
+All API endpoints are documented with OpenAPI specs, and return appropriate status codes based on the results of the
+operation. A Swagger endpoint can be found at the `"https://{host}:{port}/swagger` url. 
 
 ## Environment Configuration
 
@@ -55,6 +99,8 @@ your User Secrets file.
 > **_NOTE:_** User Secrets are the .NET way for managing secret credentials while developing locally. The User Secrets
 > file for this project can be found at `~/.microsoft/usersecrets/56a7c94b-147e-4d04-aaba-0e93358fa28a/secrets.json` on
 > MacOS and Linux, or `%APPDATA%\Microsoft\UserSecrets\56a7c94b-147e-4d04-aaba-0e93358fa28a\secrets.json` on Windows.
+> Alternatively, if you are using an IDE such as Rider, Visual Studio, or vscode, these include functionality for opening
+> and modifying the user secrets within the IDE without having to search for the directory.
 
 The keys of the values you pasted above need to be modified to match expected environment variables that Azure Identity
 `DefaultAzureCredential` uses. The required variables are:
@@ -73,54 +119,34 @@ Your user secrets should look like this:
 ```
 
 Display name is not needed and can be removed. These environment variables will be automatically pulled in during 
-application startup and used by the `DefaultAzureCredential` provider to enable access to Azure resources.
+application startup and used by the `DefaultAzureCredential` provider to enable access to Azure resources. Alternatively,
+you may set these environment variables on your local machine without having to use the user secrets file if you desire.
 
-Once you have created the App Registration and Service Principal, and saved the output, we need to add this Service
-Principal to a Microsoft Entra group. First, we'll create the AD group:
+Typically, I would add this `InfrastructureManagement` Service Principal to a group and manage permissions that way. However,
+to keep things simple we will assign the appropriate permissions directly to the SP rather than to a group the SP belongs to.
 
-```shell
-az ad group create \
-  --display-name UIPath \
-  --mail-nickname UIPath
-```
-After creating the group, we'll add the Service Principal to the group, but first we need to know its object ID:
-
-```shell
-az ad sp list \
-  --filter "startswith(displayName, 'InfrastructureManagement')" \
-  --query "[].{objectId:id, displayName:displayName}"
-```
-Using the object ID obtained from this command, we'll now register it as part of the UIPath AD group (be sure to replace
-"<object-id>" with the ID from the above query):
-
-```shell
-az ad group member add \
-  --group UIPath \
-  --member-id <object-id>
-```
-Assuming no errors showed up in the console, the InfrastructureManagement Service Principal has now been added as a 
-member of the UIPath group. We can now assign the appropriate roles for managing Azure resources.
-
-For simplicity, we'll be assigning the "Contributor" role to the group. A more granular role(s) may be desired in a production
+For simplicity, we'll be assigning the "Contributor" role to the SP. A more granular role(s) may be desired in a production
 environment, but for simplicity we'll stick with Contributor. You'll need the subscription ID to make this happen:
 
 ```shell
 az account list
 ```
 
-After obtaining the subscription ID, assign the role to the group (replace <object-id> with the InfrastructureManagement 
-ID, and <subscription-id> with your subscription ID):
+You'll also need the object ID of the SP for this assignment:
+
+```shell
+az ad sp list \
+  --filter "startswith(displayName, 'InfrastructureManagement')" \
+  --query "[].{objectId:id, displayName:displayName}"
+```
+
+After obtaining the subscription ID (the one selected as active), assign the role to the SP (replace <object-id> with 
+the InfrastructureManagement object ID, and <subscription-id> with your subscription ID):
 
 ```shell
 az role assignment create --assignee "<object-id>" \
   --role "Contributor" \
   --scope "/subscriptions/<subscription-id>"
-```
-
-In order to create the relevant resources within your Azure subscription, you'll need to register the resource provider.
-
-```shell
-az provider register --namespace Microsoft.ContainerInstance
 ```
 
 At this point, I recommend running `az logout` to ensure your own Azure credentials are not being picked up as part of
@@ -130,6 +156,7 @@ the following (redacted) order:
 - `VisualStudioCredential`
 - `VisualStudioCodeCredential`
 - `AzureCliCredential`
+
 ## Project Structure
 
 ### IM.API
@@ -138,20 +165,47 @@ The Infrastructure Management API provides a means for provisioning and managing
 within the cloud ecosystem. It includes Open API documentation, along with an Open API graphical interface for manually
 provisioning resources and to provide client auto-generation capabilities. 
 
+I don't recommend running this project directly, although you can. The `IM.AppHost` project will run this API and provide
+a number of additional features, such as OpenTelemetry configuration, service discovery, HTTP resilience, and a
+comprehensive dashboard for viewing telemetry data of the applicaiton while it's running.
+
 ### IM.AppHost
 
 The AppHost project is a .NET Aspire application that spins up the API project and all dependencies. It provides an
-out-of-the-box dashboard that provides deeper insights into the application's behavior, including any telemetry
+out-of-the-box dashboard that includes deeper insights into the application's behavior, including any telemetry
 generated during operations.
+
+I recommend running this project as the entry point. To do so, simply CD into the directory where `IM.AppHost.csproj`
+lives and run `dotnet run`.
+
+Upon execution, a link to the dashboard will be provided in the console. Navigating to this dashboard will provide you
+with additional information related to the running API, such as telemetry. You may also click on the `https` link in
+the dashboard for the `IM.API` project, and then navigate to the `/swagger` endpoint to open the SwaggerUI (OpenAPI). 
+
+When executing the various Swagger endpoints, you may take a look at the Traces tab in the dashboard to see the full
+OpenTelemetry trace of the operation, or take a look at the Metrics tab to view metrics associated with the API.
+
+### IM.ServiceDefaults
+This project can be ignored, unless you're interested in seeing how the configuration of OpenTelemetry and other API 
+requirements are set up. This is a mostly-boilerplate project intended for use as part of the .NET Aspire workload. 
 
 ### IM.API.Tests
 
-This test project includes various unit tests to validate behavior of the application.
+This test project includes two unit tests to validate behavior of the application. They live in a generic `UnitTest` class,
+which of course is not best practice, but I kept it simple for the sake of the demo.
 
-### IM.AppHost.Tests
+### IM.Integration.AppHost
+The integration AppHost project is very similar to the main `IM.AppHost` project, except it is intended to be used by the
+integration test rather than as part of developer workflow. In addition to configuring the `IM.API` to start up, it also
+pulls in the OddDotNet container and provides the container's gRPC endpoint to the `IM.API` as an environment variable so
+that the API can send its telemetry to OddDotNet for telemetry testing. 
 
-This test project builds upon the main .NET Aspire project. In addition to spinning up the usual resources, it also
-creates an OddDotNet container for automated testing of telemetry signals being produced.
+### IM.Integration.AppHost.Tests
+
+This test project using the `IM.Integration.AppHost` project to spin up the `DistributedApplication` for testing. A single
+integration test is provide for the demo, with a resource group, virtual network, and virtual machine being created. It 
+also validates various OpenTelemetry spans, ensuring they are present as part of the operation, and it deletes the entire
+resource group and infrastructure as part of the test to ensure no resources are left in the cloud upon test completion.
 
 ## Design Considerations
 
@@ -162,20 +216,18 @@ Principal.
 
 ### Terraform
 
-Typically, I would design this type of solution using Terraform, as that is generally safer and more in line with 
-industry standards. However, in the interest of simplicity I decided to leave Terraform out of the equation and use
-direct cloud provider SDKs instead. 
-
-### CI/CD
-
-I generally use pipelines for managing infrastructure, as this approach is also safer and more in line with industry
-standards. As with Terraform, however, I decided against provisioning any sort of CI/CD pipelines.
+Typically, I would design this type of solution using Terraform, as I usually prefer a more declarative approach to 
+infrastructure management. The Terraform code would be packaged up as part of a build pipeline, and deployed to the various
+environments as part of a CI/CD process. However, taking inspiration from the "novelty" criteria in the assessment, I 
+decided to use the Azure Resource Manager client SDK (`ArmClient`), which is a tool I've never used before, so I thought
+it'd be interesting to learn a new SDK while working with cloud resources that I was already familiar with through Terraform.
 
 ### C# vs Golang
 
 I'm much more familiar and comfortable with C#. While I've worked some with Golang - especially as it relates to 
 protocol buffers and libraries like OpenTelemetry, my expertise is in the .NET stack, and for this assessment I can
-move much quicker in that ecosystem. 
+move much quicker in that ecosystem. I would love to learn Golang, as it has been on my list of new languages to pick up,
+but for the sake of speed for this assessment I chose C#. 
 
 ## Infrastructure Choices
 
@@ -208,3 +260,10 @@ OddDotNet is a test harness for OpenTelemetry. It enables Observability Driven D
 which involves shifting left the validating and verifying of telemetry data that your application is producing. In this 
 demo/assessment, I use OddDotNet to receive OpenTelemetry data from the API, and then I verify the telemetry using the 
 query language I created, with the C# client that I provide via NuGet.
+
+If you'd like to learn more about OddDotNet, I have a website located [here](https://odddotnet.github.io/OddDotDocs/). I also
+have a couple examples of how to use OddDotNet in your own workflows on my YouTube channel [here](https://www.youtube.com/@Tyler-Kenna/videos).
+
+## Conclusion
+Thank you for taking the time to review my take home assessment. If you have any questions or run into issues, please
+don't hesitate to reach out. 
