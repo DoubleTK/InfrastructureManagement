@@ -16,7 +16,6 @@ a simple API that allows for provisioning and maintaining various cloud resource
 - Free (or higher) tier Azure account.
 - The Azure CLI, for generating credentials to access Azure resources. Installation instructions for the various OS's
 located [here](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
-- 
 
 ## Requirements
 
