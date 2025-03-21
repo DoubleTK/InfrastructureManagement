@@ -8,7 +8,7 @@ using OddDotCSharp;
 using OddDotNet.Proto.Common.V1;
 using OddDotNet.Proto.Trace.V1;
 
-namespace IM.AppHost.Tests;
+namespace IM.Integration.AppHost.Tests;
 
 public class IntegrationTest : IAsyncLifetime
 {

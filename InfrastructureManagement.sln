@@ -13,9 +13,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IM.ServiceDefaults", "src\I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IM.API.Tests", "tests\IM.API.Tests\IM.API.Tests.csproj", "{48C8B31E-B6B6-408B-969C-5B6E7881E22B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IM.AppHost.Tests", "tests\IM.AppHost.Tests\IM.AppHost.Tests.csproj", "{6BD059ED-127C-4BB2-B290-29AFA6766EDA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IM.Integration.AppHost.Tests", "tests\IM.Integration.AppHost.Tests\IM.Integration.AppHost.Tests.csproj", "{6BD059ED-127C-4BB2-B290-29AFA6766EDA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IM.Integration.AppHost", "IM.Integration.AppHost\IM.Integration.AppHost.csproj", "{30DD2BC9-8555-4D91-9571-C124F0C0E078}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IM.Integration.AppHost", "tests\IM.Integration.AppHost\IM.Integration.AppHost.csproj", "{30DD2BC9-8555-4D91-9571-C124F0C0E078}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

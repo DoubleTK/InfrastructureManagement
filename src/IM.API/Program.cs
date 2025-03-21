@@ -1,5 +1,3 @@
-
-
 using Azure.Identity;
 using Azure.ResourceManager;
 using IM.API.Services;
@@ -38,6 +36,7 @@ if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable(azureClientSecret)) 
 // environment variables (see the README for more info) necessary for authenticating against Azure.
 builder.Services.AddScoped<ArmClient>(_ => new ArmClient(new DefaultAzureCredential()));
 
+// Our wrapper around the ArmClient functionality for provisioning resources.
 builder.Services.AddScoped<AzureService>();
 
 var app = builder.Build();

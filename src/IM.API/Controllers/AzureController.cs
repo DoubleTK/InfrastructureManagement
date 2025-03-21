@@ -21,6 +21,11 @@ public class AzureController
     }
 
     [HttpPost("rg")]
+    
+    [ProducesResponseType<CreateResourceGroupResponse>(201, "application/json")]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType<ProblemDetails>(409, "application/json")]
     public async Task<Results<Created<CreateResourceGroupResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, Conflict<ProblemDetails>>>
         CreateResourceGroup(CreateResourceGroupRequest request, CancellationToken cancellationToken = default)
     {
@@ -53,6 +58,10 @@ public class AzureController
     }
 
     [HttpGet("rg/{name}")]
+    [ProducesResponseType<GetResourceGroupResponse>(200, "application/json")]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
     public async Task<Results<Ok<GetResourceGroupResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, NotFound>> 
         GetResourceGroupAsync(string name, CancellationToken cancellationToken = default)
     {
@@ -84,6 +93,10 @@ public class AzureController
     }
 
     [HttpDelete("rg/{name}")]
+    [ProducesResponseType(204)]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
     public async Task<Results<NoContent, BadRequest<ProblemDetails>, UnauthorizedHttpResult, NotFound>>
         DeleteResourceGroupAsync(string name, CancellationToken cancellationToken = default)
     {
@@ -106,10 +119,13 @@ public class AzureController
             return GetGenericExceptionResponse(e);
         }
     }
-
     
-
     [HttpPost("rg/{rgName}/vm")]
+    [ProducesResponseType<CreateVirtualMachineResponse>(201, "application/json")]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType<ProblemDetails>(409, "application/json")]
     public async Task<Results<Created<CreateVirtualMachineResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, NotFound, Conflict<ProblemDetails>>>
         CreateVirtualMachineAsync(string rgName, CreateVirtualMachineRequest request, CancellationToken cancellationToken = default)
     {
@@ -147,6 +163,10 @@ public class AzureController
     }
 
     [HttpGet("rg/{rgName}/vm/{vmName}")]
+    [ProducesResponseType<GetVirtualMachineResponse>(200, "application/json")]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
     public async Task<Results<Ok<GetVirtualMachineResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, NotFound>>
         GetVirtualMachineAsync(string rgName, string vmName, CancellationToken cancellationToken = default)
     {
@@ -177,6 +197,11 @@ public class AzureController
     }
 
     [HttpPost("rg/{rgName}/vnet")]
+    [ProducesResponseType<CreateVirtualNetworkResponse>(201, "application/json")]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
+    [ProducesResponseType<ProblemDetails>(409, "application/json")]
     public async Task<Results<Created<CreateVirtualNetworkResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, NotFound, Conflict<ProblemDetails>>>
         CreateVirtualNetworkAsync(string rgName, CreateVirtualNetworkRequest request, CancellationToken cancellationToken = default)
     {
@@ -207,6 +232,10 @@ public class AzureController
     }
 
     [HttpGet("rg/{rgName}/vnet/{vnetName}")]
+    [ProducesResponseType<GetVirtualNetworkResponse>(200, "application/json")]
+    [ProducesResponseType<ProblemDetails>(400, "application/json")]
+    [ProducesResponseType(401)]
+    [ProducesResponseType(404)]
     public async Task<Results<Ok<GetVirtualNetworkResponse>, BadRequest<ProblemDetails>, UnauthorizedHttpResult, NotFound>> 
         GetVirtualNetworkAsync(string rgName, string vnetName, CancellationToken cancellationToken = default)
     {
