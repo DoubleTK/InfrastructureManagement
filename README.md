@@ -13,7 +13,7 @@ a simple API that allows for provisioning and maintaining various cloud resource
   - .NET Aspire uses containers for managing the various resources it is responsible for.
   - OddDotNet runs in a container as well.
 - The latest .NET 9.0 SDK, found [here](https://dotnet.microsoft.com/en-us/download).
-- Free (or higher) tier Azure account, with a token generated.
+- Free (or higher) tier Azure account.
 - The Azure CLI, for generating credentials to access Azure resources. Installation instructions for the various OS's
 located [here](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli).
 - 
